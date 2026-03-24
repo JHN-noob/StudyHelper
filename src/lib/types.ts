@@ -1,0 +1,34 @@
+export type StudyRecord = {
+  id: string;
+  studyDate: string;
+  subject: string;
+  durationMinutes: number;
+  content: string;
+  createdAt: string;
+};
+
+export type NewStudyRecordInput = {
+  studyDate: string;
+  subject: string;
+  durationMinutes: number;
+  content: string;
+};
+
+export type SubjectTotal = {
+  subject: string;
+  minutes: number;
+  sessions: number;
+};
+
+export type DailyStudySummary = {
+  date: string;
+  label: string;
+  minutes: number;
+  isToday: boolean;
+};
+
+export type StudyRecommendation = {
+  summary: string;
+  recommendation: string;
+  focusSubject: string | null;
+};

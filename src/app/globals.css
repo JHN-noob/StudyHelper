@@ -1,26 +1,84 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f4efe7;
+  --foreground: #1f1a15;
+  --surface: #fffdf9;
+  --surface-muted: #f7f1e7;
+  --border: #e4d9ca;
+  --muted-foreground: #6e6255;
+  --accent: #2f5d7c;
+  --accent-strong: #1d3b50;
+  --accent-soft: #dbe8f2;
+  --success: #3f7d58;
+  --warning: #b98136;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #201a16;
+    --foreground: #f5efe8;
+    --surface: #2b241f;
+    --surface-muted: #352d27;
+    --border: #4a4037;
+    --muted-foreground: #c3b7a8;
+    --accent: #7fa6c2;
+    --accent-strong: #d8e7f2;
+    --accent-soft: #324552;
+    --success: #8bc39a;
+    --warning: #dca85f;
   }
 }
 
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  background: var(--background);
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(47, 93, 124, 0.1), transparent 32%),
+    var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family:
+    var(--font-geist-sans),
+    "Noto Sans KR",
+    "Apple SD Gothic Neo",
+    sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: rgba(47, 93, 124, 0.18);
+}
+
+input,
+textarea,
+select,
+button {
+  font: inherit;
 }
