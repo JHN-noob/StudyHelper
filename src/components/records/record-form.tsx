@@ -12,10 +12,10 @@ type RecordFormProps = {
 };
 
 const fieldClassName =
-  "mt-2 h-12 w-full rounded-[20px] border border-border bg-surface px-4 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-accent";
+  "mt-2 h-12 w-full rounded-[18px] border border-border bg-surface px-4 text-[15px] text-foreground outline-none transition placeholder:text-muted-foreground focus:border-foreground";
 
 const textAreaClassName =
-  "mt-2 min-h-36 w-full rounded-[24px] border border-border bg-surface px-4 py-3 text-sm leading-7 text-foreground outline-none transition placeholder:text-muted-foreground focus:border-accent";
+  "mt-2 min-h-36 w-full rounded-[22px] border border-border bg-surface px-4 py-3 text-[15px] leading-7 text-foreground outline-none transition placeholder:text-muted-foreground focus:border-foreground";
 
 export function RecordForm({ suggestedSubjects }: RecordFormProps) {
   const { addRecord } = useStudyRecords();
@@ -83,7 +83,7 @@ export function RecordForm({ suggestedSubjects }: RecordFormProps) {
               key={subject}
               type="button"
               onClick={() => setSubject(subject)}
-              className="rounded-full border border-border bg-surface-muted px-4 py-2 text-sm font-medium text-foreground transition hover:bg-accent-soft"
+              className="rounded-full border border-border bg-surface-muted px-4 py-2 text-sm font-medium text-foreground transition hover:border-foreground hover:bg-white"
             >
               {subject}
             </button>
@@ -159,15 +159,15 @@ export function RecordForm({ suggestedSubjects }: RecordFormProps) {
             actions={
               <Link
                 href="/records"
-                className="inline-flex h-11 items-center justify-center rounded-full bg-accent px-4 text-sm font-semibold text-white transition hover:bg-accent-strong"
+                className="ui-action-solid inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-semibold transition"
               >
                 기록 리스트 보기
               </Link>
             }
           />
         ) : (
-          <div className="rounded-[24px] border border-dashed border-border bg-surface-muted p-4">
-            <p className="text-sm leading-7 text-muted-foreground">
+          <div className="rounded-[22px] border border-dashed border-border bg-surface-muted p-4">
+            <p className="text-[15px] leading-7 text-muted-foreground">
               지금은 비로그인 MVP라서 저장 버튼을 누르면 이 브라우저에 바로
               기록됩니다. 이후 목록 페이지에서 삭제하고, 통계 페이지에서 즉시
               반영된 값을 확인할 수 있습니다.
@@ -177,7 +177,7 @@ export function RecordForm({ suggestedSubjects }: RecordFormProps) {
 
         <button
           type="submit"
-          className="inline-flex h-[52px] items-center justify-center rounded-full bg-accent px-5 text-sm font-semibold text-white transition hover:bg-accent-strong"
+          className="ui-action-solid inline-flex h-[52px] items-center justify-center rounded-full px-5 text-sm font-semibold transition"
         >
           공부 기록 저장
         </button>

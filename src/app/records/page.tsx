@@ -44,7 +44,7 @@ export default function RecordsPage() {
         actions={
           <Link
             href="/add"
-            className="inline-flex h-12 items-center justify-center rounded-full bg-accent px-5 text-sm font-semibold text-white transition hover:bg-accent-strong"
+            className="ui-action-solid inline-flex h-12 items-center justify-center rounded-full px-5 text-sm font-semibold transition"
           >
             새 기록 추가
           </Link>
@@ -66,7 +66,7 @@ export default function RecordsPage() {
             actions={
               <Link
                 href="/add"
-                className="inline-flex h-11 items-center justify-center rounded-full bg-accent px-4 text-sm font-semibold text-white transition hover:bg-accent-strong"
+                className="ui-action-solid inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-semibold transition"
               >
                 첫 기록 추가하기
               </Link>
@@ -108,7 +108,7 @@ export default function RecordsPage() {
                     onClick={() => setSelectedSubject(subject)}
                     className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
                       selectedSubject === subject
-                        ? "border-accent bg-accent text-white"
+                        ? "ui-tab-active"
                         : "border-border bg-surface-muted text-foreground hover:bg-surface"
                     }`}
                   >

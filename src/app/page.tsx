@@ -45,13 +45,13 @@ export default function Home() {
           <>
             <Link
               href="/add"
-              className="inline-flex h-12 items-center justify-center rounded-full bg-accent px-5 text-sm font-semibold text-white transition hover:bg-accent-strong"
+              className="ui-action-solid inline-flex h-12 items-center justify-center rounded-full px-5 text-sm font-semibold transition"
             >
               공부 기록 추가
             </Link>
             <Link
               href="/records"
-              className="inline-flex h-12 items-center justify-center rounded-full border border-border bg-surface px-5 text-sm font-semibold text-foreground transition hover:bg-surface-muted"
+              className="inline-flex h-12 items-center justify-center rounded-full border border-border bg-surface-muted px-5 text-sm font-semibold text-foreground transition hover:bg-surface"
             >
               기록 리스트 보기
             </Link>
@@ -86,7 +86,7 @@ export default function Home() {
             actions={
               <Link
                 href="/add"
-                className="inline-flex h-11 items-center justify-center rounded-full bg-accent px-4 text-sm font-semibold text-white transition hover:bg-accent-strong"
+                className="ui-action-solid inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-semibold transition"
               >
                 첫 기록 추가하기
               </Link>
@@ -118,21 +118,21 @@ export default function Home() {
 
         <Panel tone="accent" className="gap-4">
           <div>
-            <p className="text-sm font-medium text-[rgba(255,255,255,0.78)]">
+            <p className="text-sm font-medium text-white/72">
               AI 추천 영역
             </p>
             <h2 className="mt-1 text-xl font-semibold text-white">
               최근 학습 패턴 요약
             </h2>
           </div>
-          <p className="text-sm leading-7 text-[rgba(255,255,255,0.88)]">
+          <p className="text-[15px] leading-7 text-white/88">
             {recommendation.summary}
           </p>
           <div className="rounded-[24px] border border-white/18 bg-white/8 p-4">
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgba(255,255,255,0.7)]">
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-white/70">
               Local AI
             </p>
-            <p className="mt-2 text-sm leading-7 text-white">
+            <p className="mt-2 text-[15px] leading-7 text-white">
               {recommendation.recommendation}
             </p>
           </div>

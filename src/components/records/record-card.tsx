@@ -16,13 +16,14 @@ export function RecordCard({
   onAction,
 }: RecordCardProps) {
   return (
-    <article className="rounded-[28px] border border-border bg-surface p-5 shadow-[0_16px_30px_rgba(31,26,21,0.06)]">
+    <article className="relative overflow-hidden rounded-[26px] border border-border bg-surface p-5 shadow-[0_10px_24px_rgba(34,29,24,0.05)]">
+      <div className="pointer-events-none absolute right-0 top-0 h-16 w-16 rounded-full bg-accent-soft/40 blur-2xl" />
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-muted-foreground">
             {formatStudyDate(record.studyDate)}
           </p>
-          <h3 className="mt-2 text-base font-semibold leading-7 text-foreground">
+          <h3 className="mt-2 text-[15px] font-semibold leading-7 text-foreground">
             {record.content}
           </h3>
         </div>
@@ -44,9 +45,9 @@ export function RecordCard({
             onClick={() => onAction?.(record)}
             disabled={!onAction}
             className={cn(
-              "inline-flex h-10 items-center justify-center rounded-full border border-border px-4 text-sm font-medium text-muted-foreground",
+              "inline-flex h-10 items-center justify-center rounded-full border border-border bg-surface-muted px-4 text-sm font-medium text-muted-foreground",
               onAction
-                ? "cursor-pointer transition hover:border-accent hover:text-accent"
+                ? "cursor-pointer transition hover:border-foreground hover:text-foreground"
                 : "cursor-not-allowed opacity-80",
             )}
           >

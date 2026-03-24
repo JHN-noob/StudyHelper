@@ -1,17 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4efe7;
-  --foreground: #1f1a15;
-  --surface: #fffdf9;
-  --surface-muted: #f7f1e7;
-  --border: #e4d9ca;
-  --muted-foreground: #6e6255;
-  --accent: #2f5d7c;
-  --accent-strong: #1d3b50;
-  --accent-soft: #dbe8f2;
-  --success: #3f7d58;
-  --warning: #b98136;
+  --background: #f5f4f1;
+  --foreground: #1f1d1a;
+  --surface: #ffffff;
+  --surface-muted: #efede8;
+  --border: #dbd7d1;
+  --muted-foreground: #5f5a54;
+  --accent: #6e7b6b;
+  --accent-strong: #4d5b4b;
+  --accent-soft: #e3e8e1;
+  --success: #5f7d68;
+  --warning: #ab8357;
+  --action-bg: #1f1d1a;
+  --action-hover-bg: #2a2723;
+  --action-fg: #fbfaf8;
+  --action-ring: rgba(31, 29, 26, 0.12);
 }
 
 @theme inline {
@@ -32,17 +36,42 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #201a16;
-    --foreground: #f5efe8;
-    --surface: #2b241f;
-    --surface-muted: #352d27;
-    --border: #4a4037;
-    --muted-foreground: #c3b7a8;
-    --accent: #7fa6c2;
-    --accent-strong: #d8e7f2;
-    --accent-soft: #324552;
-    --success: #8bc39a;
-    --warning: #dca85f;
+    --background: #1b1a18;
+    --foreground: #f2efea;
+    --surface: #242320;
+    --surface-muted: #2f2d2a;
+    --border: #46433f;
+    --muted-foreground: #c5bdb5;
+    --accent: #9dac98;
+    --accent-strong: #d8e0d5;
+    --accent-soft: #394037;
+    --success: #94b29b;
+    --warning: #d0aa7a;
+    --action-bg: #f2efea;
+    --action-hover-bg: #e3ddd6;
+    --action-fg: #1b1a18;
+    --action-ring: rgba(242, 239, 234, 0.18);
+  }
+}
+
+@layer components {
+  .ui-action-solid {
+    border: 1px solid var(--action-bg);
+    background-color: var(--action-bg) !important;
+    color: var(--action-fg) !important;
+    box-shadow: 0 8px 18px var(--action-ring);
+  }
+
+  .ui-action-solid:hover {
+    border-color: var(--action-hover-bg);
+    background-color: var(--action-hover-bg) !important;
+  }
+
+  .ui-tab-active {
+    border-color: transparent;
+    background-color: var(--action-bg) !important;
+    color: var(--action-fg) !important;
+    box-shadow: 0 8px 18px var(--action-ring);
   }
 }
 
@@ -57,14 +86,24 @@ html {
 body {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top, rgba(47, 93, 124, 0.1), transparent 32%),
+    radial-gradient(circle at top, rgba(110, 123, 107, 0.06), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.4), transparent 22%),
     var(--background);
   color: var(--foreground);
   font-family:
-    var(--font-geist-sans),
+    "SF Pro Text",
+    "SF Pro Display",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "Helvetica Neue",
     "Noto Sans KR",
     "Apple SD Gothic Neo",
     sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.01em;
+  line-height: 1.5;
 }
 
 a {
@@ -73,7 +112,7 @@ a {
 }
 
 ::selection {
-  background: rgba(47, 93, 124, 0.18);
+  background: rgba(95, 107, 93, 0.18);
 }
 
 input,
@@ -81,4 +120,12 @@ textarea,
 select,
 button {
   font: inherit;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
 }

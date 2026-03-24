@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 type NavItem = {
   href: string;
   label: string;
-  icon: (active: boolean) => JSX.Element;
+  icon: () => JSX.Element;
 };
 
 const navItems: NavItem[] = [
@@ -23,7 +23,7 @@ export function BottomNav() {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 px-4">
-      <nav className="pointer-events-auto mx-auto flex max-w-md items-center gap-1 rounded-[28px] border border-white/60 bg-[rgba(255,253,249,0.88)] p-2 shadow-[0_18px_50px_rgba(31,26,21,0.12)] backdrop-blur xl:max-w-lg dark:border-white/10 dark:bg-[rgba(43,36,31,0.88)]">
+      <nav className="pointer-events-auto mx-auto flex max-w-md items-center gap-1 rounded-[30px] border border-white/70 bg-[rgba(255,255,255,0.84)] p-2 shadow-[0_16px_36px_rgba(53,40,30,0.12)] backdrop-blur xl:max-w-lg dark:border-white/10 dark:bg-[rgba(43,36,31,0.88)]">
         {navItems.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -34,14 +34,14 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-1 flex-col items-center justify-center gap-2 rounded-[22px] px-3 py-3 text-xs font-semibold transition",
+                "flex flex-1 flex-col items-center justify-center gap-2 rounded-[20px] px-3 py-3 text-[12px] font-medium transition duration-200",
                 isActive
-                  ? "bg-accent text-white"
-                  : "text-muted-foreground hover:bg-surface-muted hover:text-foreground",
+                  ? "ui-tab-active"
+                  : "text-muted-foreground hover:bg-[rgba(243,238,232,0.92)] hover:text-foreground",
               )}
             >
               <span className="flex h-5 w-5 items-center justify-center">
-                {item.icon(isActive)}
+                {item.icon()}
               </span>
               <span>{item.label}</span>
             </Link>
@@ -52,12 +52,12 @@ export function BottomNav() {
   );
 }
 
-function renderHomeIcon(active: boolean) {
+function renderHomeIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
-      className={cn("h-5 w-5", active ? "stroke-white" : "stroke-current")}
+      className="h-5 w-5 stroke-current"
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -70,12 +70,12 @@ function renderHomeIcon(active: boolean) {
   );
 }
 
-function renderAddIcon(active: boolean) {
+function renderAddIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
-      className={cn("h-5 w-5", active ? "stroke-white" : "stroke-current")}
+      className="h-5 w-5 stroke-current"
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -88,12 +88,12 @@ function renderAddIcon(active: boolean) {
   );
 }
 
-function renderListIcon(active: boolean) {
+function renderListIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
-      className={cn("h-5 w-5", active ? "stroke-white" : "stroke-current")}
+      className="h-5 w-5 stroke-current"
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -109,12 +109,12 @@ function renderListIcon(active: boolean) {
   );
 }
 
-function renderStatsIcon(active: boolean) {
+function renderStatsIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
-      className={cn("h-5 w-5", active ? "stroke-white" : "stroke-current")}
+      className="h-5 w-5 stroke-current"
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"

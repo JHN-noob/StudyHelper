@@ -30,7 +30,7 @@ export default function AddPage() {
         actions={
           <Link
             href="/records"
-            className="inline-flex h-12 items-center justify-center rounded-full border border-border bg-surface px-5 text-sm font-semibold text-foreground transition hover:bg-surface-muted"
+            className="inline-flex h-12 items-center justify-center rounded-full border border-border bg-surface-muted px-5 text-sm font-semibold text-foreground transition hover:bg-surface"
           >
             기록 리스트 보기
           </Link>
