@@ -13,20 +13,25 @@ import { getRecentRecords, getSubjectTotals, getTodayTotalMinutes } from "@/lib/
 const fallbackSubjects = ["알고리즘", "영어", "React", "SQL"];
 
 export default function AddPage() {
-  const { records } = useStudyRecords();
+  const { records, errorMessage, storageMode } = useStudyRecords();
   const recentRecords = getRecentRecords(records, 2);
   const suggestedSubjects = getSubjectTotals(records)
     .slice(0, 4)
     .map((subject) => subject.subject);
   const todayTotalMinutes = getTodayTotalMinutes(records);
   const hasRecords = records.length > 0;
+  const headingDescription =
+    storageMode === "supabase"
+      ? "날짜, 과목, 공부 시간, 공부 내용을 입력하면 익명 Supabase 세션에 바로 저장되고 다른 화면 통계에도 즉시 반영됩니다."
+      : errorMessage ||
+        "Supabase 연결 전까지는 이 브라우저 저장 모드로 기록을 유지합니다.";
 
   return (
     <AppShell>
       <PageHeading
         eyebrow="Add Record"
         title="한 번의 공부를 한 장의 카드처럼 빠르게 남기세요."
-        description="모바일 입력을 기준으로 날짜, 과목, 공부 시간, 공부 내용을 자연스럽게 기록하고 즉시 통계에 반영되도록 구성했습니다."
+        description={headingDescription}
         actions={
           <Link
             href="/records"

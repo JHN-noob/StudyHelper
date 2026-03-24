@@ -12,7 +12,6 @@ import { PageHeading } from "@/components/ui/page-heading";
 import { Panel } from "@/components/ui/panel";
 import { formatMinutesKorean } from "@/lib/format";
 import {
-  buildStudyRecommendation,
   getActiveSubjectCount,
   getLast7DaysSummary,
   getRecentRecords,
@@ -21,9 +20,10 @@ import {
   getTodayTotalMinutes,
   getTotalMinutes,
 } from "@/lib/stats";
+import { useAiRecommendation } from "@/lib/use-ai-recommendation";
 
 export default function Home() {
-  const { records, isHydrated } = useStudyRecords();
+  const { records, errorMessage, isHydrated, storageMode } = useStudyRecords();
   const recentWeekRecords = getRecordsForLastDays(records, 7);
   const weeklySummary = getLast7DaysSummary(records);
   const recentRecords = getRecentRecords(records, 3);
@@ -31,16 +31,21 @@ export default function Home() {
   const todayTotalMinutes = getTodayTotalMinutes(records);
   const weeklyTotalMinutes = getTotalMinutes(recentWeekRecords);
   const activeSubjectCount = getActiveSubjectCount(recentWeekRecords);
-  const recommendation = buildStudyRecommendation(records);
+  const { recommendation, isLoading: isAiLoading } = useAiRecommendation(records);
   const hasRecords = records.length > 0;
   const showEmptyState = isHydrated && !hasRecords;
+  const headingDescription =
+    storageMode === "supabase"
+      ? "익명 Supabase 세션으로 공부 기록을 저장하고, 통계와 추천 카드도 같은 데이터 기준으로 이어지도록 연결했습니다."
+      : errorMessage ||
+        "Supabase 연결 전까지는 이 브라우저 저장 모드로 기록을 유지합니다.";
 
   return (
     <AppShell>
       <PageHeading
         eyebrow="Study Helper"
         title="공부 흐름을 기록하고, 오늘의 우선순위를 한 화면에서 정리하세요."
-        description="비로그인 상태에서도 기록 추가, 삭제, 통계 확인이 바로 되도록 브라우저 저장소 기반 MVP로 연결했습니다."
+        description={headingDescription}
         actions={
           <>
             <Link
@@ -63,7 +68,7 @@ export default function Home() {
         <MetricCard
           label="오늘 공부 시간"
           value={formatMinutesKorean(todayTotalMinutes)}
-          helper={isHydrated ? "오늘 쌓인 총 집중 시간" : "브라우저 기록 불러오는 중"}
+          helper={isHydrated ? "오늘 쌓인 총 집중 시간" : "기록 불러오는 중"}
           tone="accent"
         />
         <MetricCard
@@ -82,7 +87,11 @@ export default function Home() {
         <Panel className="gap-4">
           <EmptyState
             title="아직 저장된 공부 기록이 없어요"
-            description="먼저 한 세션만 기록해도 홈 대시보드, 최근 기록, 통계, 추천 카드가 바로 살아납니다. 지금은 로그인 없이 이 브라우저에만 저장됩니다."
+            description={
+              storageMode === "supabase"
+                ? "먼저 한 세션만 기록해도 홈 대시보드, 최근 기록, 통계, 추천 카드가 바로 살아납니다. 지금은 익명 세션으로 이어지는 개인 워크스페이스 형태예요."
+                : "먼저 한 세션만 기록해도 홈 대시보드, 최근 기록, 통계, 추천 카드가 바로 살아납니다. 현재는 이 브라우저 저장 모드로 동작하고 있어요."
+            }
             actions={
               <Link
                 href="/add"
@@ -119,7 +128,7 @@ export default function Home() {
         <Panel tone="accent" className="gap-4">
           <div>
             <p className="text-sm font-medium text-white/72">
-              AI 추천 영역
+              {recommendation.source === "openai" ? "AI 추천 영역" : "추천 영역"}
             </p>
             <h2 className="mt-1 text-xl font-semibold text-white">
               최근 학습 패턴 요약
@@ -130,7 +139,11 @@ export default function Home() {
           </p>
           <div className="rounded-[24px] border border-white/18 bg-white/8 p-4">
             <p className="text-xs font-medium uppercase tracking-[0.18em] text-white/70">
-              Local AI
+              {isAiLoading
+                ? "Loading"
+                : recommendation.source === "openai"
+                  ? "OpenAI"
+                  : "Local Fallback"}
             </p>
             <p className="mt-2 text-[15px] leading-7 text-white">
               {recommendation.recommendation}

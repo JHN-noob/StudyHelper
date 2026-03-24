@@ -32,3 +32,11 @@ export type StudyRecommendation = {
   recommendation: string;
   focusSubject: string | null;
 };
+
+export type StudyRecommendationSource = "local" | "openai";
+
+export type AIStudyRecommendation = StudyRecommendation & {
+  source: StudyRecommendationSource;
+};
+
+export type RecordsStorageMode = "supabase" | "local";

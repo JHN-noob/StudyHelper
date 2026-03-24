@@ -13,7 +13,8 @@ import { getSubjectTotals, getTotalMinutes } from "@/lib/stats";
 import type { StudyRecord } from "@/lib/types";
 
 export default function RecordsPage() {
-  const { records, isHydrated, deleteRecord } = useStudyRecords();
+  const { records, errorMessage, isHydrated, deleteRecord, storageMode } =
+    useStudyRecords();
   const [selectedSubject, setSelectedSubject] = useState("전체");
   const subjectTotals = getSubjectTotals(records);
   const totalMinutes = getTotalMinutes(records);
@@ -22,17 +23,28 @@ export default function RecordsPage() {
     selectedSubject === "전체"
       ? records
       : records.filter((record) => record.subject === selectedSubject);
+  const headingDescription =
+    storageMode === "supabase"
+      ? "익명 세션으로 저장된 공부 기록을 불러오고 삭제할 수 있습니다. 필터를 눌러 과목별로 빠르게 확인해보세요."
+      : errorMessage ||
+        "Supabase 연결 전까지는 이 브라우저 저장 모드에 있는 기록을 보여줍니다.";
 
-  function handleDelete(record: StudyRecord) {
+  async function handleDelete(record: StudyRecord) {
     const shouldDelete = window.confirm(
-      `"${record.subject}" 기록을 삭제할까요? 이 작업은 이 브라우저에서만 지워집니다.`,
+      storageMode === "supabase"
+        ? `"${record.subject}" 기록을 삭제할까요? 익명 세션에 저장된 데이터에서도 함께 지워집니다.`
+        : `"${record.subject}" 기록을 삭제할까요? 이 작업은 이 브라우저에서만 지워집니다.`,
     );
 
     if (!shouldDelete) {
       return;
     }
 
-    deleteRecord(record.id);
+    const result = await deleteRecord(record.id);
+
+    if (!result.ok) {
+      window.alert(result.errorMessage);
+    }
   }
 
   return (
@@ -40,7 +52,7 @@ export default function RecordsPage() {
       <PageHeading
         eyebrow="Records"
         title="공부 세션을 카드 단위로 모아 보고, 필요한 기록은 바로 정리하세요."
-        description="비로그인 상태에서도 기록 추가와 삭제가 실제로 동작하도록 연결했습니다. 필터를 눌러 과목별로 빠르게 확인할 수 있습니다."
+        description={headingDescription}
         actions={
           <Link
             href="/add"
@@ -54,8 +66,8 @@ export default function RecordsPage() {
       {!isHydrated ? (
         <Panel className="gap-4">
           <EmptyState
-            title="브라우저 기록을 불러오는 중이에요"
-            description="잠시 후 이 기기에 저장된 공부 기록과 삭제 가능한 리스트가 표시됩니다."
+            title="공부 기록을 불러오는 중이에요"
+            description="잠시 후 현재 세션에서 접근 가능한 공부 기록과 삭제 가능한 리스트가 표시됩니다."
           />
         </Panel>
       ) : !records.length ? (
@@ -86,8 +98,9 @@ export default function RecordsPage() {
                 </h2>
               </div>
               <p className="text-sm leading-7 text-muted-foreground">
-                지금은 브라우저 저장소에만 기록을 보관하는 단계라서, 같은 기기와
-                브라우저에서는 바로 이어서 조회할 수 있습니다.
+                {storageMode === "supabase"
+                  ? "현재는 anonymous auth 기반으로 같은 익명 세션의 기록을 계속 불러옵니다."
+                  : "현재는 브라우저 저장 모드라서 같은 기기와 브라우저 안에서만 바로 이어서 조회할 수 있습니다."}
               </p>
             </Panel>
 

@@ -18,15 +18,16 @@ const textAreaClassName =
   "mt-2 min-h-36 w-full rounded-[22px] border border-border bg-surface px-4 py-3 text-[15px] leading-7 text-foreground outline-none transition placeholder:text-muted-foreground focus:border-foreground";
 
 export function RecordForm({ suggestedSubjects }: RecordFormProps) {
-  const { addRecord } = useStudyRecords();
+  const { addRecord, storageMode } = useStudyRecords();
   const [studyDate, setStudyDate] = useState(formatInputDate());
   const [subject, setSubject] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("");
   const [content, setContent] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSaved, setIsSaved] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const trimmedSubject = subject.trim();
@@ -51,12 +52,22 @@ export function RecordForm({ suggestedSubjects }: RecordFormProps) {
       return;
     }
 
-    addRecord({
+    setIsSubmitting(true);
+
+    const result = await addRecord({
       studyDate,
       subject: trimmedSubject,
       durationMinutes: parsedDuration,
       content: trimmedContent,
     });
+
+    setIsSubmitting(false);
+
+    if (!result.ok) {
+      setIsSaved(false);
+      setErrorMessage(result.errorMessage);
+      return;
+    }
 
     setDurationMinutes("");
     setContent("");
@@ -154,8 +165,16 @@ export function RecordForm({ suggestedSubjects }: RecordFormProps) {
 
         {isSaved ? (
           <EmptyState
-            title="기록이 브라우저에 저장됐어요"
-            description="지금은 비로그인 MVP라서 이 기기 브라우저의 localStorage에 저장됩니다. 같은 브라우저에서는 기록/통계가 바로 이어집니다."
+            title={
+              storageMode === "supabase"
+                ? "기록이 익명 세션에 저장됐어요"
+                : "기록이 브라우저에 저장됐어요"
+            }
+            description={
+              storageMode === "supabase"
+                ? "지금은 anonymous auth 기반이라 같은 익명 세션 안에서 기록과 통계가 바로 이어집니다."
+                : "현재는 비로그인 fallback 모드라서 이 기기 브라우저의 localStorage에 저장됩니다."
+            }
             actions={
               <Link
                 href="/records"
@@ -168,18 +187,19 @@ export function RecordForm({ suggestedSubjects }: RecordFormProps) {
         ) : (
           <div className="rounded-[22px] border border-dashed border-border bg-surface-muted p-4">
             <p className="text-[15px] leading-7 text-muted-foreground">
-              지금은 비로그인 MVP라서 저장 버튼을 누르면 이 브라우저에 바로
-              기록됩니다. 이후 목록 페이지에서 삭제하고, 통계 페이지에서 즉시
-              반영된 값을 확인할 수 있습니다.
+              {storageMode === "supabase"
+                ? "지금은 anonymous auth 기반이라 저장 버튼을 누르면 익명 세션의 Supabase 기록으로 바로 반영됩니다. 이후 목록 페이지에서 삭제하고, 통계 페이지에서 즉시 반영된 값을 확인할 수 있습니다."
+                : "현재는 fallback 모드라서 저장 버튼을 누르면 이 브라우저에 바로 기록됩니다. 이후 목록 페이지에서 삭제하고, 통계 페이지에서 즉시 반영된 값을 확인할 수 있습니다."}
             </p>
           </div>
         )}
 
         <button
           type="submit"
-          className="ui-action-solid inline-flex h-[52px] items-center justify-center rounded-full px-5 text-sm font-semibold transition"
+          disabled={isSubmitting}
+          className="ui-action-solid inline-flex h-[52px] items-center justify-center rounded-full px-5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70"
         >
-          공부 기록 저장
+          {isSubmitting ? "저장 중..." : "공부 기록 저장"}
         </button>
       </form>
     </Panel>

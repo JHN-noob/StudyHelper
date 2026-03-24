@@ -11,7 +11,6 @@ import { PageHeading } from "@/components/ui/page-heading";
 import { Panel } from "@/components/ui/panel";
 import { formatMinutesKorean } from "@/lib/format";
 import {
-  buildStudyRecommendation,
   getActiveSubjectCount,
   getAverageSessionMinutes,
   getLast7DaysSummary,
@@ -20,9 +19,10 @@ import {
   getTodayTotalMinutes,
   getTotalMinutes,
 } from "@/lib/stats";
+import { useAiRecommendation } from "@/lib/use-ai-recommendation";
 
 export default function StatsPage() {
-  const { records, isHydrated } = useStudyRecords();
+  const { records, errorMessage, isHydrated, storageMode } = useStudyRecords();
   const recentWeekRecords = getRecordsForLastDays(records, 7);
   const weeklySummary = getLast7DaysSummary(records);
   const subjectTotals = getSubjectTotals(records);
@@ -30,15 +30,20 @@ export default function StatsPage() {
   const todayTotalMinutes = getTodayTotalMinutes(records);
   const averageSessionMinutes = getAverageSessionMinutes(recentWeekRecords);
   const activeSubjectCount = getActiveSubjectCount(recentWeekRecords);
-  const recommendation = buildStudyRecommendation(records);
+  const { recommendation, isLoading: isAiLoading } = useAiRecommendation(records);
   const hasRecords = records.length > 0;
+  const headingDescription =
+    storageMode === "supabase"
+      ? "오늘 총 시간, 과목별 누적, 최근 7일 흐름을 모두 익명 Supabase 세션에 저장된 기록에서 계산합니다."
+      : errorMessage ||
+        "Supabase 연결 전까지는 현재 브라우저 저장 기록을 기준으로 통계를 보여줍니다.";
 
   return (
     <AppShell>
       <PageHeading
         eyebrow="Stats"
         title="최근 공부 패턴을 읽고 다음 복습 우선순위를 정하세요."
-        description="오늘 총 시간, 과목별 누적, 최근 7일 흐름을 모두 현재 브라우저에 저장된 기록에서 바로 계산합니다."
+        description={headingDescription}
         actions={
           <Link
             href="/"
@@ -77,7 +82,7 @@ export default function StatsPage() {
         <Panel className="gap-4">
           <EmptyState
             title="통계용 기록을 불러오는 중이에요"
-            description="잠시 후 이 브라우저에 저장된 공부 기록을 기준으로 통계가 계산됩니다."
+            description="잠시 후 현재 세션의 공부 기록을 기준으로 통계가 계산됩니다."
           />
         </Panel>
       ) : !hasRecords ? (
@@ -140,14 +145,18 @@ export default function StatsPage() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-medium text-white/72">
-              AI Summary
+              {recommendation.source === "openai" ? "AI Summary" : "Recommendation"}
             </p>
             <h2 className="mt-1 text-xl font-semibold text-white">
               기록 기반 추천 카드
             </h2>
           </div>
           <p className="text-sm font-medium text-white/72">
-            현재는 로컬 규칙 기반 버전
+            {isAiLoading
+              ? "AI 추천 생성 중"
+              : recommendation.source === "openai"
+                ? "OpenAI 응답 사용 중"
+                : "로컬 fallback 사용 중"}
           </p>
         </div>
         <p className="text-[15px] leading-7 text-white/88">
