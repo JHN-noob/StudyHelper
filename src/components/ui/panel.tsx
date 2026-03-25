@@ -17,7 +17,7 @@ export function Panel({
       className={cn(
         "relative overflow-hidden flex flex-col rounded-[28px] border p-5 shadow-[0_10px_24px_rgba(34,29,24,0.05)] sm:p-6",
         tone === "accent"
-          ? "border-transparent bg-[#1f1d1a] text-[#fbfaf8]"
+          ? "border-transparent bg-[color:var(--accent-panel-bg)] text-[color:var(--accent-panel-fg)]"
           : tone === "muted"
             ? "border-border bg-surface-muted text-foreground"
             : "border-border bg-surface text-foreground",

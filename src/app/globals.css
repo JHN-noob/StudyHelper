@@ -12,10 +12,12 @@
   --accent-soft: #e3e8e1;
   --success: #5f7d68;
   --warning: #ab8357;
-  --action-bg: #1f1d1a;
-  --action-hover-bg: #2a2723;
+  --action-bg: #35302b;
+  --action-hover-bg: #413b35;
   --action-fg: #fbfaf8;
-  --action-ring: rgba(31, 29, 26, 0.12);
+  --action-ring: rgba(53, 48, 43, 0.16);
+  --accent-panel-bg: #35302b;
+  --accent-panel-fg: #fbfaf8;
 }
 
 @theme inline {
@@ -51,21 +53,23 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #1b1a18;
-    --foreground: #f2efea;
-    --surface: #242320;
-    --surface-muted: #2f2d2a;
-    --border: #46433f;
-    --muted-foreground: #c5bdb5;
-    --accent: #9dac98;
-    --accent-strong: #d8e0d5;
-    --accent-soft: #394037;
-    --success: #94b29b;
-    --warning: #d0aa7a;
-    --action-bg: #f2efea;
-    --action-hover-bg: #e3ddd6;
-    --action-fg: #1b1a18;
-    --action-ring: rgba(242, 239, 234, 0.18);
+    --background: #f3f1ec;
+    --foreground: #201d19;
+    --surface: #fcfbf8;
+    --surface-muted: #efebe4;
+    --border: #d8d2ca;
+    --muted-foreground: #645d56;
+    --accent: #6f7c6a;
+    --accent-strong: #4d5b4a;
+    --accent-soft: #e3e8e1;
+    --success: #5f7d68;
+    --warning: #ab8357;
+    --action-bg: #35302b;
+    --action-hover-bg: #413b35;
+    --action-fg: #fbfaf8;
+    --action-ring: rgba(53, 48, 43, 0.16);
+    --accent-panel-bg: #35302b;
+    --accent-panel-fg: #fbfaf8;
   }
 }
 
@@ -88,6 +92,17 @@
     color: var(--action-fg) !important;
     box-shadow: 0 8px 18px var(--action-ring);
   }
+
+  .ui-tab-inactive {
+    color: #fbfaf8 !important;
+    opacity: 0.9;
+  }
+
+  .ui-tab-inactive:hover {
+    color: #fbfaf8 !important;
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.08);
+  }
 }
 
 * {
@@ -100,10 +115,7 @@ html {
 
 body {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top, rgba(110, 123, 107, 0.06), transparent 26%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.4), transparent 22%),
-    var(--background);
+  background: var(--background);
   color: var(--foreground);
   font-family:
     "SF Pro Text",

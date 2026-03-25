@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import Link from "next/link";
 import { useStudyRecords } from "@/components/providers/study-records-provider";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Panel } from "@/components/ui/panel";
+import { SelectionChip } from "@/components/ui/selection-chip";
 import { formatInputDate } from "@/lib/format";
 import type { StudyRecord } from "@/lib/types";
 
@@ -25,8 +26,12 @@ export function RecordForm({
   mode = "create",
   initialRecord = null,
 }: RecordFormProps) {
-  const { addRecord, errorMessage: storageErrorMessage, storageMode, updateRecord } =
-    useStudyRecords();
+  const {
+    addRecord,
+    errorMessage: storageErrorMessage,
+    storageMode,
+    updateRecord,
+  } = useStudyRecords();
   const isEditMode = mode === "edit" && Boolean(initialRecord);
   const isStorageAvailable = storageMode === "supabase";
   const [studyDate, setStudyDate] = useState(
@@ -55,31 +60,32 @@ export function RecordForm({
 
     if (!trimmedSubject) {
       setIsSaved(false);
-      setErrorMessage("과목을 먼저 입력해 주세요.");
+      setErrorMessage("과목을 먼저 입력해주세요.");
       return;
     }
 
     if (!Number.isFinite(parsedDuration) || parsedDuration <= 0) {
       setIsSaved(false);
-      setErrorMessage("공부 시간은 1분 이상으로 입력해 주세요.");
+      setErrorMessage("공부 시간은 1분 이상으로 입력해주세요.");
       return;
     }
 
     setIsSubmitting(true);
 
-    const result = isEditMode && initialRecord
-      ? await updateRecord(initialRecord.id, {
-          studyDate,
-          subject: trimmedSubject,
-          durationMinutes: parsedDuration,
-          content: trimmedContent,
-        })
-      : await addRecord({
-          studyDate,
-          subject: trimmedSubject,
-          durationMinutes: parsedDuration,
-          content: trimmedContent,
-        });
+    const result =
+      isEditMode && initialRecord
+        ? await updateRecord(initialRecord.id, {
+            studyDate,
+            subject: trimmedSubject,
+            durationMinutes: parsedDuration,
+            content: trimmedContent,
+          })
+        : await addRecord({
+            studyDate,
+            subject: trimmedSubject,
+            durationMinutes: parsedDuration,
+            content: trimmedContent,
+          });
 
     setIsSubmitting(false);
 
@@ -104,28 +110,26 @@ export function RecordForm({
         <p className="text-sm font-medium text-muted-foreground">Study Form</p>
         <h2 className="mt-1 text-xl font-semibold text-foreground">
           {isEditMode
-            ? "기록을 다시 다듬는 카드형 폼."
-            : "한 세션을 빠르게 입력하는 카드형 폼."}
+            ? "기록을 다시 다듬는 입력 카드예요."
+            : "이번 세션을 빠르게 남기는 입력 카드예요."}
         </h2>
       </div>
 
       <div>
         <p className="text-sm font-medium text-muted-foreground">
-          최근 많이 기록한 과목
+          최근 자주 기록한 과목
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          {suggestedSubjects.map((subject) => (
-            <button
-              key={subject}
-              type="button"
+          {suggestedSubjects.map((subjectName) => (
+            <SelectionChip
+              key={subjectName}
               onClick={() => {
-                setSubject(subject);
+                setSubject(subjectName);
                 resetFeedbackState();
               }}
-              className="rounded-full border border-border bg-surface-muted px-4 py-2 text-sm font-medium text-foreground transition hover:border-foreground hover:bg-white"
             >
-              {subject}
-            </button>
+              {subjectName}
+            </SelectionChip>
           ))}
         </div>
       </div>
@@ -191,14 +195,14 @@ export function RecordForm({
               setContent(event.target.value);
               resetFeedbackState();
             }}
-            placeholder="비워둬도 저장할 수 있어요. 필요하면 무엇을 공부했고 어떤 부분을 다시 볼지 적어두세요."
+            placeholder="비워둬도 저장할 수 있어요. 필요하면 오늘 무엇을 공부했고, 다음에 무엇을 다시 볼지 짧게 적어보세요."
             className={textAreaClassName}
           />
         </label>
 
         {errorMessage ? (
           <EmptyState
-            title="입력 확인이 필요해요."
+            title="입력 내용을 확인해주세요."
             description={errorMessage}
           />
         ) : null}
@@ -212,24 +216,18 @@ export function RecordForm({
             }
             description={
               isEditMode
-                ? "수정한 값이 목록과 통계에 바로 반영됩니다."
-                : "지금은 익명 세션 기반이라 같은 세션 안에서 기록과 통계가 바로 이어집니다."
+                ? "수정한 내용은 기록 목록과 통계에 바로 반영돼요."
+                : "같은 세션 안에서는 기록 목록과 통계를 바로 이어서 확인할 수 있어요."
             }
             actions={
               <>
-                <Link
-                  href="/records"
-                  className="ui-action-solid inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-semibold transition"
-                >
+                <Button href="/records" variant="primary" size="sm">
                   기록 리스트 보기
-                </Link>
+                </Button>
                 {isEditMode ? (
-                  <Link
-                    href="/add"
-                    className="inline-flex h-11 items-center justify-center rounded-full border border-border bg-surface-muted px-4 text-sm font-semibold text-foreground transition hover:bg-surface"
-                  >
+                  <Button href="/add" variant="secondary" size="sm">
                     새 기록 추가
-                  </Link>
+                  </Button>
                 ) : null}
               </>
             }
@@ -239,29 +237,30 @@ export function RecordForm({
             <p className="text-[15px] leading-7 text-muted-foreground">
               {isStorageAvailable
                 ? isEditMode
-                  ? "지금은 익명 세션 기반이라 수정 버튼을 누르면 현재 세션의 기록이 바로 갱신됩니다."
-                  : "지금은 익명 세션 기반이라 저장 버튼을 누르면 현재 세션의 기록으로 바로 반영됩니다. 이후 목록 페이지에서 삭제하고, 통계 페이지에서 즉시 반영된 값을 확인할 수 있습니다."
+                  ? "수정 버튼을 누르면 현재 세션의 기록이 바로 갱신되고 통계도 함께 다시 계산돼요."
+                  : "저장 버튼을 누르면 현재 세션의 기록에 바로 반영돼요. 메모는 비워둬도 괜찮아요."
                 : storageErrorMessage ||
-                  "현재는 저장 연결이 불안정해서 기록을 저장하거나 수정할 수 없어요. 연결 상태를 확인한 뒤 다시 시도해 주세요."}
+                  "지금은 연결이 불안정해서 기록을 저장하거나 수정할 수 없어요. 연결 상태를 확인한 뒤 다시 시도해주세요."}
             </p>
           </div>
         )}
 
-        <button
+        <Button
           type="submit"
           disabled={isSubmitting || !isStorageAvailable}
-          className="ui-action-solid inline-flex h-[52px] items-center justify-center rounded-full px-5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70"
+          variant="primary"
+          className="disabled:cursor-not-allowed disabled:opacity-70"
         >
           {!isStorageAvailable
             ? "지금은 저장할 수 없어요."
             : isSubmitting
-            ? isEditMode
-              ? "수정 중..."
-              : "저장 중..."
-            : isEditMode
-              ? "공부 기록 수정"
-              : "공부 기록 저장"}
-        </button>
+              ? isEditMode
+                ? "수정 중..."
+                : "저장 중..."
+              : isEditMode
+                ? "공부 기록 수정"
+                : "공부 기록 저장"}
+        </Button>
       </form>
     </Panel>
   );

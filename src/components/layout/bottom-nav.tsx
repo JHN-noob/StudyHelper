@@ -23,7 +23,7 @@ export function BottomNav() {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 px-4">
-      <nav className="pointer-events-auto mx-auto flex max-w-md items-center gap-1 rounded-[30px] border border-white/70 bg-[rgba(255,255,255,0.84)] p-2 shadow-[0_16px_36px_rgba(53,40,30,0.12)] backdrop-blur xl:max-w-lg dark:border-white/10 dark:bg-[rgba(43,36,31,0.88)]">
+      <nav className="pointer-events-auto mx-auto flex max-w-md items-center gap-1 rounded-[30px] border border-white/12 bg-[rgba(53,48,43,0.88)] p-2 shadow-[0_16px_36px_rgba(53,40,30,0.16)] backdrop-blur xl:max-w-lg">
         {navItems.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -37,7 +37,7 @@ export function BottomNav() {
                 "flex flex-1 flex-col items-center justify-center gap-2 rounded-[20px] px-3 py-3 text-[12px] font-medium transition duration-200",
                 isActive
                   ? "ui-tab-active"
-                  : "text-muted-foreground hover:bg-[rgba(243,238,232,0.92)] hover:text-foreground",
+                  : "ui-tab-inactive",
               )}
             >
               <span className="flex h-5 w-5 items-center justify-center">

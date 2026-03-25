@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { AppShell } from "@/components/layout/app-shell";
 import { useStudyRecords } from "@/components/providers/study-records-provider";
 import { RecordCard } from "@/components/records/record-card";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Panel } from "@/components/ui/panel";
 import { PageHeading } from "@/components/ui/page-heading";
+import { SelectionChip } from "@/components/ui/selection-chip";
+import { SummaryPanel } from "@/components/ui/summary-panel";
 import { formatMinutesKorean } from "@/lib/format";
 import { getSubjectTotals, getTotalMinutes } from "@/lib/stats";
 import type { StudyRecord } from "@/lib/types";
@@ -25,15 +26,15 @@ export default function RecordsPage() {
       : records.filter((record) => record.subject === selectedSubject);
   const headingDescription =
     storageMode === "supabase"
-      ? "익명 세션으로 저장된 공부 기록을 불러오고 삭제할 수 있습니다. 필터를 눌러 과목별로 빠르게 확인해보세요."
+      ? "익명 세션으로 저장한 공부 기록을 모아보고, 필요한 기록은 바로 수정하거나 삭제할 수 있어요."
       : errorMessage ||
-        "Supabase 연결에 실패해서 지금은 기록을 불러오거나 수정할 수 없어요.";
+        "Supabase 연결이 불안정해서 지금은 기록을 불러오거나 수정할 수 없어요.";
 
   async function handleDelete(record: StudyRecord) {
     const shouldDelete = window.confirm(
       storageMode === "supabase"
-        ? `"${record.subject}" 기록을 삭제할까요? 익명 세션에 저장된 데이터에서도 함께 지워집니다.`
-        : `"${record.subject}" 기록은 지금 삭제할 수 없어요. 저장 연결이 복구된 뒤 다시 시도해 주세요.`,
+        ? `"${record.subject}" 기록을 삭제할까요? 지금 세션에 저장된 데이터에서도 바로 지워져요.`
+        : `"${record.subject}" 기록은 지금 삭제할 수 없어요. 연결이 복구된 뒤 다시 시도해주세요.`,
     );
 
     if (!shouldDelete) {
@@ -51,88 +52,64 @@ export default function RecordsPage() {
     <AppShell>
       <PageHeading
         eyebrow="Records"
-        title="공부 세션을 카드 단위로 모아 보고, 필요한 기록은 바로 정리하세요."
+        title="공부 세션을 한눈에 모아보고 필요한 기록은 바로 정리해보세요."
         description={headingDescription}
         actions={
-          <Link
-            href="/add"
-            className="ui-action-solid inline-flex h-12 items-center justify-center rounded-full px-5 text-sm font-semibold transition"
-          >
+          <Button href="/add" variant="primary">
             새 기록 추가
-          </Link>
+          </Button>
         }
       />
 
       {!isHydrated ? (
-        <Panel className="gap-4">
-          <EmptyState
-            title="공부 기록을 불러오는 중이에요."
-            description="잠시 후 현재 세션에서 접근 가능한 공부 기록과 삭제 가능한 리스트가 표시됩니다."
-          />
-        </Panel>
+        <SummaryPanel
+          eyebrow="로딩 중"
+          title="공부 기록을 불러오는 중이에요."
+          description="현재 세션에서 확인할 수 있는 공부 기록을 준비하고 있어요."
+        />
       ) : !records.length ? (
-        <Panel className="gap-4">
-          <EmptyState
-            title="저장된 기록이 아직 없어요."
-            description="공부 기록을 하나 추가하면 이 페이지에서 바로 확인하고 삭제할 수 있습니다."
-            actions={
-              storageMode === "supabase" ? (
-                <Link
-                  href="/add"
-                  className="ui-action-solid inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-semibold transition"
-                >
-                  첫 기록 추가하기
-                </Link>
-              ) : null
-            }
-          />
-        </Panel>
+        <SummaryPanel
+          eyebrow="Empty"
+          title="저장한 기록이 아직 없어요."
+          description="공부 기록을 하나만 추가해도 이 페이지에서 바로 확인하고 수정할 수 있어요."
+        >
+          {storageMode === "supabase" ? (
+            <Button href="/add" variant="primary" size="sm">
+              첫 기록 추가하기
+            </Button>
+          ) : null}
+        </SummaryPanel>
       ) : (
         <section className="grid gap-4 xl:grid-cols-[0.84fr_1.16fr]">
           <div className="grid gap-4">
-            <Panel tone="muted" className="gap-4">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  리스트 요약
-                </p>
-                <h2 className="mt-1 text-xl font-semibold text-foreground">
-                  총 {records.length}개의 세션, {formatMinutesKorean(totalMinutes)} 누적
-                </h2>
-              </div>
-              <p className="text-sm leading-7 text-muted-foreground">
-                {storageMode === "supabase"
-                  ? "지금은 익명 세션 기반이라 같은 세션의 기록을 계속 불러옵니다."
+            <SummaryPanel
+              tone="muted"
+              eyebrow="리스트 요약"
+              title={`총 ${records.length}개의 세션, ${formatMinutesKorean(totalMinutes)} 누적`}
+              description={
+                storageMode === "supabase"
+                  ? "지금 보는 리스트는 현재 익명 세션에 저장된 기록 기준이에요."
                   : errorMessage ||
-                    "현재는 저장 연결이 끊겨 있어서 목록을 안정적으로 불러오지 못하고 있어요."}
-              </p>
-            </Panel>
+                    "연결이 불안정해서 목록이 정상적으로 갱신되지 않을 수 있어요."
+              }
+            />
 
-            <Panel className="gap-4">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  과목 필터
-                </p>
-                <h2 className="mt-1 text-xl font-semibold text-foreground">
-                  원하는 주제만 빠르게 보기
-                </h2>
-              </div>
+            <SummaryPanel
+              eyebrow="과목 필터"
+              title="원하는 과목만 빠르게 보기"
+            >
               <div className="flex flex-wrap gap-2">
                 {filterOptions.map((subject) => (
-                  <button
+                  <SelectionChip
                     key={subject}
-                    type="button"
+                    active={selectedSubject === subject}
                     onClick={() => setSelectedSubject(subject)}
-                    className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
-                      selectedSubject === subject
-                        ? "ui-tab-active"
-                        : "border-border bg-surface-muted text-foreground hover:bg-surface"
-                    }`}
                   >
                     {subject}
-                  </button>
+                  </SelectionChip>
                 ))}
               </div>
-            </Panel>
+            </SummaryPanel>
           </div>
 
           <div className="grid gap-3">
@@ -143,19 +120,17 @@ export default function RecordsPage() {
                   record={record}
                   actions={
                     <>
-                      <Link
-                        href={`/add?edit=${record.id}`}
-                        className="ui-action-solid inline-flex h-10 items-center justify-center rounded-full px-4 text-sm font-medium transition"
-                      >
+                      <Button href={`/add?edit=${record.id}`} size="compact" variant="primary">
                         기록 수정
-                      </Link>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        size="compact"
+                        variant="secondary"
                         onClick={() => void handleDelete(record)}
-                        className="inline-flex h-10 items-center justify-center rounded-full border border-border bg-surface-muted px-4 text-sm font-medium text-muted-foreground transition hover:border-foreground hover:text-foreground"
                       >
                         기록 삭제
-                      </button>
+                      </Button>
                     </>
                   }
                 />
@@ -163,7 +138,7 @@ export default function RecordsPage() {
             ) : (
               <EmptyState
                 title="선택한 과목의 기록이 없어요."
-                description="필터를 전체로 바꾸거나 다른 과목을 선택해 보세요."
+                description="필터를 전체로 바꾸거나 다른 과목을 선택해보세요."
               />
             )}
           </div>

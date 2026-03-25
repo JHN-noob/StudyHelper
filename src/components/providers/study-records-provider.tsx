@@ -29,6 +29,8 @@ type MutationResult =
   | { ok: true }
   | { ok: false; errorMessage: string };
 
+const SHOULD_EXPOSE_STORAGE_ERROR_DETAIL = process.env.NODE_ENV === "development";
+
 type StudyRecordsContextValue = {
   records: StudyRecord[];
   isHydrated: boolean;
@@ -41,7 +43,6 @@ type StudyRecordsContextValue = {
     input: UpdateStudyRecordInput,
   ) => Promise<MutationResult>;
   deleteRecord: (id: string) => Promise<MutationResult>;
-  refreshRecords: () => Promise<void>;
 };
 
 const StudyRecordsContext = createContext<StudyRecordsContextValue | null>(null);
@@ -113,6 +114,8 @@ export function StudyRecordsProvider({
     };
   }, []);
 
+  // Reserved for a future manual re-sync action.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async function refreshRecords() {
     if (storageMode !== "supabase") {
       return;
@@ -304,7 +307,6 @@ export function StudyRecordsProvider({
     addRecord,
     updateRecord,
     deleteRecord,
-    refreshRecords,
   };
 
   return (
@@ -363,18 +365,56 @@ async function fetchRemoteRecords(supabase: SupabaseClient) {
 function createInitializationErrorMessage(error: unknown) {
   const detail = getErrorDetail(error);
 
-  return `Supabase 연결에 실패했어요. 지금은 기록을 불러오거나 저장할 수 없어요. 잠시 후 다시 시도하거나 테이블 이름, 익명 세션 설정, RLS 정책을 확인해보세요.${detail ? ` ${detail}` : ""}`;
+  if (!SHOULD_EXPOSE_STORAGE_ERROR_DETAIL || !detail) {
+    return "Supabase 연결에 실패했어요. 지금은 기록을 불러오거나 저장할 수 없어요. 잠시 후 다시 시도하거나 설정을 확인해보세요.";
+  }
+
+  return `Supabase 연결에 실패했어요. 지금은 기록을 불러오거나 저장할 수 없어요. 잠시 후 다시 시도하거나 설정을 확인해보세요. ${detail}`;
 }
 
 function createCrudErrorMessage(error: unknown, fallbackMessage: string) {
   const detail = getErrorDetail(error);
 
-  return detail ? `${fallbackMessage} (${detail})` : fallbackMessage;
+  if (!SHOULD_EXPOSE_STORAGE_ERROR_DETAIL || !detail) {
+    return fallbackMessage;
+  }
+
+  return `${fallbackMessage} (${detail})`;
 }
 
 function getErrorDetail(error: unknown) {
   if (error instanceof Error) {
     return error.message;
+  }
+
+  if (error && typeof error === "object") {
+    const candidate = error as {
+      message?: unknown;
+      details?: unknown;
+      hint?: unknown;
+      code?: unknown;
+    };
+    const parts: string[] = [];
+
+    if (typeof candidate.message === "string" && candidate.message.trim()) {
+      parts.push(candidate.message.trim());
+    }
+
+    if (typeof candidate.details === "string" && candidate.details.trim()) {
+      parts.push(candidate.details.trim());
+    }
+
+    if (typeof candidate.hint === "string" && candidate.hint.trim()) {
+      parts.push(`hint: ${candidate.hint.trim()}`);
+    }
+
+    if (typeof candidate.code === "string" && candidate.code.trim()) {
+      parts.push(`code: ${candidate.code.trim()}`);
+    }
+
+    if (parts.length > 0) {
+      return parts.join(" / ");
+    }
   }
 
   return "";

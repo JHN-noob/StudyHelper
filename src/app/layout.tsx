@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AnonymousUserGate } from "@/components/onboarding/anonymous-user-gate";
 import { GuestProfileProvider } from "@/components/providers/guest-profile-provider";
 import { StudyRecordsProvider } from "@/components/providers/study-records-provider";
+import { AiRecommendationProvider } from "@/lib/use-ai-recommendation";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -22,7 +23,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <GuestProfileProvider>
           <AnonymousUserGate>
-            <StudyRecordsProvider>{children}</StudyRecordsProvider>
+            <StudyRecordsProvider>
+              <AiRecommendationProvider>{children}</AiRecommendationProvider>
+            </StudyRecordsProvider>
           </AnonymousUserGate>
         </GuestProfileProvider>
       </body>
