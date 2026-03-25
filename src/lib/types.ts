@@ -14,6 +14,8 @@ export type NewStudyRecordInput = {
   content: string;
 };
 
+export type UpdateStudyRecordInput = NewStudyRecordInput;
+
 export type SubjectTotal = {
   subject: string;
   minutes: number;
@@ -37,6 +39,7 @@ export type StudyRecommendationSource = "local" | "openai";
 
 export type AIStudyRecommendation = StudyRecommendation & {
   source: StudyRecommendationSource;
+  debugMessage?: string;
 };
 
-export type RecordsStorageMode = "supabase" | "local";
+export type RecordsStorageMode = "supabase" | "unavailable";

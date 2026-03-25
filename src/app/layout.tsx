@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { AnonymousUserGate } from "@/components/onboarding/anonymous-user-gate";
+import { GuestProfileProvider } from "@/components/providers/guest-profile-provider";
 import { StudyRecordsProvider } from "@/components/providers/study-records-provider";
 import "./globals.css";
 
@@ -18,7 +20,11 @@ export default function RootLayout({
   return (
     <html lang="ko" className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <StudyRecordsProvider>{children}</StudyRecordsProvider>
+        <GuestProfileProvider>
+          <AnonymousUserGate>
+            <StudyRecordsProvider>{children}</StudyRecordsProvider>
+          </AnonymousUserGate>
+        </GuestProfileProvider>
       </body>
     </html>
   );

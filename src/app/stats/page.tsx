@@ -21,6 +21,8 @@ import {
 } from "@/lib/stats";
 import { useAiRecommendation } from "@/lib/use-ai-recommendation";
 
+const SHOULD_SHOW_AI_DEBUG = process.env.NODE_ENV === "development";
+
 export default function StatsPage() {
   const { records, errorMessage, isHydrated, storageMode } = useStudyRecords();
   const recentWeekRecords = getRecordsForLastDays(records, 7);
@@ -34,9 +36,9 @@ export default function StatsPage() {
   const hasRecords = records.length > 0;
   const headingDescription =
     storageMode === "supabase"
-      ? "오늘 총 시간, 과목별 누적, 최근 7일 흐름을 모두 익명 Supabase 세션에 저장된 기록에서 계산합니다."
+      ? "오늘 총 시간, 과목별 누적, 최근 7일 흐름을 모두 익명 세션에 저장된 기록에서 계산합니다."
       : errorMessage ||
-        "Supabase 연결 전까지는 현재 브라우저 저장 기록을 기준으로 통계를 보여줍니다.";
+        "Supabase 연결에 실패해서 지금은 통계를 계산할 기록을 불러올 수 없어요.";
 
   return (
     <AppShell>
@@ -81,22 +83,24 @@ export default function StatsPage() {
       {!isHydrated ? (
         <Panel className="gap-4">
           <EmptyState
-            title="통계용 기록을 불러오는 중이에요"
+            title="통계용 기록을 불러오는 중이에요."
             description="잠시 후 현재 세션의 공부 기록을 기준으로 통계가 계산됩니다."
           />
         </Panel>
       ) : !hasRecords ? (
         <Panel className="gap-4">
           <EmptyState
-            title="통계를 만들 기록이 아직 없어요"
+            title="통계를 만들 기록이 아직 없어요."
             description="공부 기록을 하나라도 추가하면 오늘 총 시간, 과목별 누적, 최근 7일 요약과 추천 카드가 자동으로 계산됩니다."
             actions={
-              <Link
-                href="/add"
-                className="ui-action-solid inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-semibold transition"
-              >
-                기록 추가하러 가기
-              </Link>
+              storageMode === "supabase" ? (
+                <Link
+                  href="/add"
+                  className="ui-action-solid inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-semibold transition"
+                >
+                  기록 추가하러 가기
+                </Link>
+              ) : null
             }
           />
         </Panel>
@@ -134,7 +138,7 @@ export default function StatsPage() {
             <SubjectTotalList totals={subjectTotals} />
           ) : (
             <EmptyState
-              title="과목별 누적이 아직 없어요"
+              title="과목별 누적이 아직 없어요."
               description="기록이 쌓이면 과목별 총 공부 시간이 자동으로 정리됩니다."
             />
           )}
@@ -166,6 +170,13 @@ export default function StatsPage() {
           <p className="text-[15px] leading-7 text-white">
             {recommendation.recommendation}
           </p>
+          {SHOULD_SHOW_AI_DEBUG &&
+          recommendation.source === "local" &&
+          recommendation.debugMessage ? (
+            <p className="mt-3 text-xs leading-6 text-white/70">
+              debug: {recommendation.debugMessage}
+            </p>
+          ) : null}
         </div>
       </Panel>
     </AppShell>

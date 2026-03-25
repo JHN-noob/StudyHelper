@@ -1,6 +1,7 @@
 import type {
   NewStudyRecordInput,
   StudyRecord,
+  UpdateStudyRecordInput,
 } from "@/lib/types";
 
 export const LEGACY_STORAGE_KEY = "study-helper-records-v1";
@@ -23,6 +24,13 @@ export type StudyRecordInsert = {
   duration_minutes: number;
   content: string;
   created_at: string;
+};
+
+export type StudyRecordUpdate = {
+  study_date: string;
+  subject: string;
+  duration_minutes: number;
+  content: string;
 };
 
 export const STUDY_RECORD_SELECT =
@@ -50,6 +58,15 @@ export function mapStudyRecordInputToInsert(
     duration_minutes: input.durationMinutes,
     content: input.content.trim(),
     created_at: new Date().toISOString(),
+  };
+}
+
+export function mapStudyRecordInputToUpdate(input: UpdateStudyRecordInput): StudyRecordUpdate {
+  return {
+    study_date: input.studyDate,
+    subject: input.subject.trim(),
+    duration_minutes: input.durationMinutes,
+    content: input.content.trim(),
   };
 }
 

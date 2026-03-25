@@ -50,13 +50,25 @@ export function useAiRecommendation(records: StudyRecord[]) {
 
         if (!isCancelled && isAiStudyRecommendation(payload)) {
           setRecommendation(payload);
+          return;
+        }
+
+        if (!isCancelled) {
+          setRecommendation(
+            createFallbackRecommendation(
+              records,
+              "AI route response shape was not recognized.",
+            ),
+          );
         }
       } catch (error) {
         if (isAbortError(error) || isCancelled) {
           return;
         }
 
-        setRecommendation(nextFallback);
+        setRecommendation(
+          createFallbackRecommendation(records, getErrorDetail(error)),
+        );
       } finally {
         if (!isCancelled) {
           setIsLoading(false);
@@ -78,10 +90,14 @@ export function useAiRecommendation(records: StudyRecord[]) {
   };
 }
 
-function createFallbackRecommendation(records: StudyRecord[]) {
+function createFallbackRecommendation(
+  records: StudyRecord[],
+  debugMessage?: string,
+) {
   return {
     ...buildStudyRecommendation(records),
     source: "local" as const,
+    debugMessage,
   };
 }
 
@@ -99,10 +115,20 @@ function isAiStudyRecommendation(
     typeof candidate.recommendation === "string" &&
     (typeof candidate.focusSubject === "string" ||
       candidate.focusSubject === null) &&
+    (typeof candidate.debugMessage === "string" ||
+      typeof candidate.debugMessage === "undefined") &&
     (candidate.source === "local" || candidate.source === "openai")
   );
 }
 
 function isAbortError(error: unknown) {
   return error instanceof DOMException && error.name === "AbortError";
+}
+
+function getErrorDetail(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Unknown AI fetch error.";
 }

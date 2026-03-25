@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { formatMinutesKorean, formatStudyDate } from "@/lib/format";
 import type { StudyRecord } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -7,6 +8,7 @@ type RecordCardProps = {
   showAction?: boolean;
   actionLabel?: string;
   onAction?: (record: StudyRecord) => void;
+  actions?: ReactNode;
 };
 
 export function RecordCard({
@@ -14,7 +16,10 @@ export function RecordCard({
   showAction = true,
   actionLabel = "기록 삭제",
   onAction,
+  actions,
 }: RecordCardProps) {
+  const hasContent = record.content.trim().length > 0;
+
   return (
     <article className="relative overflow-hidden rounded-[26px] border border-border bg-surface p-5 shadow-[0_10px_24px_rgba(34,29,24,0.05)]">
       <div className="pointer-events-none absolute right-0 top-0 h-16 w-16 rounded-full bg-accent-soft/40 blur-2xl" />
@@ -23,8 +28,15 @@ export function RecordCard({
           <p className="text-sm font-medium text-muted-foreground">
             {formatStudyDate(record.studyDate)}
           </p>
-          <h3 className="mt-2 text-[15px] font-semibold leading-7 text-foreground">
-            {record.content}
+          <h3
+            className={cn(
+              "mt-2 text-[15px] leading-7",
+              hasContent
+                ? "font-semibold text-foreground"
+                : "font-medium text-muted-foreground",
+            )}
+          >
+            {hasContent ? record.content : "메모 없음"}
           </h3>
         </div>
 
@@ -39,7 +51,11 @@ export function RecordCard({
           <span>{formatMinutesKorean(record.durationMinutes)} 집중</span>
         </div>
 
-        {showAction ? (
+        {actions ? (
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {actions}
+          </div>
+        ) : showAction ? (
           <button
             type="button"
             onClick={() => onAction?.(record)}

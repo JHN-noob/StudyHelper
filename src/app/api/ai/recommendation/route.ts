@@ -7,14 +7,19 @@ import type {
 
 const OPENAI_API_URL = "https://api.openai.com/v1/responses";
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-5-mini";
+const OPENAI_MAX_OUTPUT_TOKENS = 1400;
+const SHOULD_EXPOSE_DEBUG_MESSAGE = process.env.NODE_ENV !== "production";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  let recordsForFallback: StudyRecord[] = [];
+
   try {
     const body = (await request.json()) as unknown;
     const records = coerceRecords(body);
-    const fallbackRecommendation = createFallbackRecommendation(records);
+    recordsForFallback = records;
+    const fallbackRecommendation = createFallbackRecommendation(records, undefined);
 
     if (records.length === 0) {
       return NextResponse.json(fallbackRecommendation);
@@ -23,7 +28,9 @@ export async function POST(request: Request) {
     const apiKey = process.env.OPENAI_API_KEY?.trim();
 
     if (!apiKey) {
-      return NextResponse.json(fallbackRecommendation);
+      return NextResponse.json(
+        createFallbackRecommendation(records, "OPENAI_API_KEY is missing."),
+      );
     }
 
     const response = await fetch(OPENAI_API_URL, {
@@ -34,10 +41,32 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         model: OPENAI_MODEL,
-        max_output_tokens: 260,
+        max_output_tokens: OPENAI_MAX_OUTPUT_TOKENS,
+        reasoning: {
+          effort: "minimal",
+          summary: "auto",
+        },
         text: {
           format: {
-            type: "json_object",
+            type: "json_schema",
+            name: "study_recommendation",
+            strict: true,
+            schema: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                summary: {
+                  type: "string",
+                },
+                recommendation: {
+                  type: "string",
+                },
+                focusSubject: {
+                  type: ["string", "null"],
+                },
+              },
+              required: ["summary", "recommendation", "focusSubject"],
+            },
           },
         },
         input: [
@@ -56,27 +85,55 @@ export async function POST(request: Request) {
 
     if (!response.ok) {
       const errorBody = await response.text();
+      const debugMessage = `OpenAI request failed: ${response.status} ${truncateText(errorBody)}`;
 
-      return NextResponse.json(
-        {
-          ...fallbackRecommendation,
-          debugMessage: `OpenAI request failed: ${response.status} ${errorBody}`,
-        },
-        { status: 200 },
-      );
+      logServerError(debugMessage);
+
+      return NextResponse.json(createFallbackRecommendation(records, debugMessage));
     }
 
     const payload = (await response.json()) as unknown;
+    const incompleteReason = getIncompleteReason(payload);
+
+    if (incompleteReason) {
+      const debugMessage =
+        `OpenAI response was incomplete: ${incompleteReason}. Try a higher max_output_tokens or lower reasoning effort.`;
+      logServerError(debugMessage);
+
+      return NextResponse.json(
+        createFallbackRecommendation(
+          records,
+          debugMessage,
+        ),
+      );
+    }
+
     const outputText = extractOutputText(payload);
 
     if (!outputText) {
-      return NextResponse.json(fallbackRecommendation);
+      const debugMessage =
+        `OpenAI response did not include readable text. ${summarizeOutputShape(payload)}`;
+      logServerError(debugMessage);
+
+      return NextResponse.json(
+        createFallbackRecommendation(
+          records,
+          debugMessage,
+        ),
+      );
     }
 
     const parsedPayload = safeParseJson(outputText);
 
     if (!isRecommendationPayload(parsedPayload)) {
-      return NextResponse.json(fallbackRecommendation);
+      logServerError("OpenAI response JSON did not match the expected shape.");
+
+      return NextResponse.json(
+        createFallbackRecommendation(
+          records,
+          "OpenAI response JSON did not match the expected shape.",
+        ),
+      );
     }
 
     return NextResponse.json({
@@ -85,8 +142,12 @@ export async function POST(request: Request) {
       focusSubject: parsedPayload.focusSubject,
       source: "openai",
     } satisfies AIStudyRecommendation);
-  } catch {
-    return NextResponse.json(createFallbackRecommendation([]));
+  } catch (error) {
+    logServerError("Unexpected AI route failure.", error);
+
+    return NextResponse.json(
+      createFallbackRecommendation(recordsForFallback, getErrorDetail(error)),
+    );
   }
 }
 
@@ -104,10 +165,21 @@ function coerceRecords(body: unknown) {
   return candidate.records.filter(isStudyRecord).slice(0, 10);
 }
 
-function createFallbackRecommendation(records: StudyRecord[]) {
+function createFallbackRecommendation(
+  records: StudyRecord[],
+  debugMessage?: string,
+) {
+  if (debugMessage && !SHOULD_EXPOSE_DEBUG_MESSAGE) {
+    return {
+      ...buildStudyRecommendation(records),
+      source: "local" as const,
+    };
+  }
+
   return {
     ...buildStudyRecommendation(records),
     source: "local" as const,
+    debugMessage,
   };
 }
 
@@ -136,9 +208,11 @@ function extractOutputText(payload: unknown) {
     output_text?: unknown;
     output?: Array<{
       type?: string;
+      refusal?: string;
       content?: Array<{
         type?: string;
         text?: string;
+        refusal?: string;
       }>;
     }>;
   };
@@ -152,6 +226,14 @@ function extractOutputText(payload: unknown) {
   }
 
   for (const item of candidate.output) {
+    if (typeof item.refusal === "string") {
+      return JSON.stringify({
+        summary: "AI 응답이 거절되었어요.",
+        recommendation: item.refusal,
+        focusSubject: null,
+      });
+    }
+
     if (!Array.isArray(item.content)) {
       continue;
     }
@@ -159,6 +241,18 @@ function extractOutputText(payload: unknown) {
     for (const content of item.content) {
       if (content.type === "output_text" && typeof content.text === "string") {
         return content.text;
+      }
+
+       if (typeof content.text === "string") {
+        return content.text;
+      }
+
+      if (typeof content.refusal === "string") {
+        return JSON.stringify({
+          summary: "AI 응답이 거절되었어요.",
+          recommendation: content.refusal,
+          focusSubject: null,
+        });
       }
     }
   }
@@ -186,6 +280,8 @@ function isRecommendationPayload(
   return (
     typeof candidate.summary === "string" &&
     typeof candidate.recommendation === "string" &&
+    (typeof candidate.debugMessage === "string" ||
+      typeof candidate.debugMessage === "undefined") &&
     (typeof candidate.focusSubject === "string" ||
       candidate.focusSubject === null)
   );
@@ -206,4 +302,81 @@ function isStudyRecord(value: unknown): value is StudyRecord {
     typeof candidate.content === "string" &&
     typeof candidate.createdAt === "string"
   );
+}
+
+function getErrorDetail(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Unknown server error.";
+}
+
+function logServerError(message: string, error?: unknown) {
+  if (error) {
+    console.error("[api/ai/recommendation]", message, error);
+    return;
+  }
+
+  console.error("[api/ai/recommendation]", message);
+}
+
+function truncateText(value: string, maxLength = 180) {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength)}...`;
+}
+
+function summarizeOutputShape(payload: unknown) {
+  if (!payload || typeof payload !== "object") {
+    return "Payload was not an object.";
+  }
+
+  const candidate = payload as {
+    output?: Array<{
+      type?: string;
+      content?: Array<{
+        type?: string;
+      }>;
+    }>;
+  };
+
+  if (!Array.isArray(candidate.output) || candidate.output.length === 0) {
+    return "output array was empty.";
+  }
+
+  const shape = candidate.output
+    .map((item) => {
+      const contentTypes = Array.isArray(item.content)
+        ? item.content.map((content) => content.type ?? "unknown").join(",")
+        : "no-content";
+
+      return `${item.type ?? "unknown"}[${contentTypes}]`;
+    })
+    .join(" | ");
+
+  return `output shape: ${shape}`;
+}
+
+function getIncompleteReason(payload: unknown) {
+  if (!payload || typeof payload !== "object") {
+    return "";
+  }
+
+  const candidate = payload as {
+    status?: unknown;
+    incomplete_details?: {
+      reason?: unknown;
+    } | null;
+  };
+
+  if (candidate.status !== "incomplete") {
+    return "";
+  }
+
+  const reason = candidate.incomplete_details?.reason;
+
+  return typeof reason === "string" ? reason : "unknown";
 }

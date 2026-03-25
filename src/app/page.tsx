@@ -22,6 +22,8 @@ import {
 } from "@/lib/stats";
 import { useAiRecommendation } from "@/lib/use-ai-recommendation";
 
+const SHOULD_SHOW_AI_DEBUG = process.env.NODE_ENV === "development";
+
 export default function Home() {
   const { records, errorMessage, isHydrated, storageMode } = useStudyRecords();
   const recentWeekRecords = getRecordsForLastDays(records, 7);
@@ -36,9 +38,9 @@ export default function Home() {
   const showEmptyState = isHydrated && !hasRecords;
   const headingDescription =
     storageMode === "supabase"
-      ? "익명 Supabase 세션으로 공부 기록을 저장하고, 통계와 추천 카드도 같은 데이터 기준으로 이어지도록 연결했습니다."
+      ? "익명 세션으로 공부 기록을 저장하고, 통계와 추천 카드도 같은 데이터 기준으로 이어지도록 연결했습니다."
       : errorMessage ||
-        "Supabase 연결 전까지는 이 브라우저 저장 모드로 기록을 유지합니다.";
+        "Supabase 연결에 실패해서 지금은 기록을 불러오거나 저장할 수 없어요.";
 
   return (
     <AppShell>
@@ -86,19 +88,21 @@ export default function Home() {
       {showEmptyState ? (
         <Panel className="gap-4">
           <EmptyState
-            title="아직 저장된 공부 기록이 없어요"
+            title="아직 저장된 공부 기록이 없어요."
             description={
               storageMode === "supabase"
                 ? "먼저 한 세션만 기록해도 홈 대시보드, 최근 기록, 통계, 추천 카드가 바로 살아납니다. 지금은 익명 세션으로 이어지는 개인 워크스페이스 형태예요."
-                : "먼저 한 세션만 기록해도 홈 대시보드, 최근 기록, 통계, 추천 카드가 바로 살아납니다. 현재는 이 브라우저 저장 모드로 동작하고 있어요."
+                : "현재는 저장 연결이 끊겨 있어서 첫 기록을 저장할 수 없어요. 연결 상태를 확인한 뒤 다시 시도해 주세요."
             }
             actions={
-              <Link
-                href="/add"
-                className="ui-action-solid inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-semibold transition"
-              >
-                첫 기록 추가하기
-              </Link>
+              storageMode === "supabase" ? (
+                <Link
+                  href="/add"
+                  className="ui-action-solid inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-semibold transition"
+                >
+                  첫 기록 추가하기
+                </Link>
+              ) : null
             }
           />
         </Panel>
@@ -148,6 +152,13 @@ export default function Home() {
             <p className="mt-2 text-[15px] leading-7 text-white">
               {recommendation.recommendation}
             </p>
+            {SHOULD_SHOW_AI_DEBUG &&
+            recommendation.source === "local" &&
+            recommendation.debugMessage ? (
+              <p className="mt-3 text-xs leading-6 text-white/70">
+                debug: {recommendation.debugMessage}
+              </p>
+            ) : null}
           </div>
         </Panel>
       </section>
@@ -179,7 +190,7 @@ export default function Home() {
             </div>
           ) : (
             <EmptyState
-              title="최근 기록이 아직 없어요"
+              title="최근 기록이 아직 없어요."
               description="새 기록이 저장되면 가장 최근 공부 세션이 이 영역에 바로 표시됩니다."
             />
           )}
@@ -191,7 +202,7 @@ export default function Home() {
               과목별 누적
             </p>
             <h2 className="mt-1 text-xl font-semibold text-foreground">
-              어디에 시간을 가장 많이 썼는지
+              어떤 과목을 가장 많이 공부했을까?
             </h2>
           </div>
 
@@ -199,7 +210,7 @@ export default function Home() {
             <SubjectTotalList totals={subjectTotals.slice(0, 4)} />
           ) : (
             <EmptyState
-              title="과목 통계가 아직 없어요"
+              title="과목 통계가 아직 없어요."
               description="공부 기록이 쌓이면 어떤 과목에 시간을 많이 쓰는지 자동으로 계산됩니다."
             />
           )}

@@ -10,20 +10,19 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
-  clearLegacyStudyRecords,
   mapStudyRecordInputToInsert,
+  mapStudyRecordInputToUpdate,
   mapStudyRecordRow,
-  readLegacyStudyRecords,
   sortStudyRecords,
   STUDY_RECORD_SELECT,
   STUDY_RECORDS_TABLE,
-  writeLegacyStudyRecords,
   type StudyRecordRow,
 } from "@/lib/supabase/records";
 import type {
   NewStudyRecordInput,
   RecordsStorageMode,
   StudyRecord,
+  UpdateStudyRecordInput,
 } from "@/lib/types";
 
 type MutationResult =
@@ -37,6 +36,10 @@ type StudyRecordsContextValue = {
   storageMode: RecordsStorageMode;
   errorMessage: string;
   addRecord: (input: NewStudyRecordInput) => Promise<MutationResult>;
+  updateRecord: (
+    id: string,
+    input: UpdateStudyRecordInput,
+  ) => Promise<MutationResult>;
   deleteRecord: (id: string) => Promise<MutationResult>;
   refreshRecords: () => Promise<void>;
 };
@@ -79,22 +82,6 @@ export function StudyRecordsProvider({
         setSessionUserId(session.user.id);
 
         const remoteRecords = await fetchRemoteRecords(supabase);
-        const legacyRecords = readLegacyStudyRecords();
-
-        if (remoteRecords.length === 0 && legacyRecords.length > 0) {
-          await migrateLegacyRecords(supabase, session.user.id, legacyRecords);
-
-          const migratedRecords = await fetchRemoteRecords(supabase);
-
-          if (isCancelled) {
-            return;
-          }
-
-          clearLegacyStudyRecords();
-          setRecords(migratedRecords);
-          setStorageMode("supabase");
-          return;
-        }
 
         if (isCancelled) {
           return;
@@ -103,16 +90,14 @@ export function StudyRecordsProvider({
         setRecords(remoteRecords);
         setStorageMode("supabase");
       } catch (error) {
-        const legacyRecords = readLegacyStudyRecords();
-
         if (isCancelled) {
           return;
         }
 
-        setRecords(legacyRecords);
-        setStorageMode("local");
+        setRecords([]);
+        setStorageMode("unavailable");
         setSessionUserId(null);
-        setErrorMessage(createInitializationErrorMessage(error, legacyRecords));
+        setErrorMessage(createInitializationErrorMessage(error));
       } finally {
         if (!isCancelled) {
           setIsHydrated(true);
@@ -127,14 +112,6 @@ export function StudyRecordsProvider({
       isCancelled = true;
     };
   }, []);
-
-  useEffect(() => {
-    if (!isHydrated || storageMode !== "local") {
-      return;
-    }
-
-    writeLegacyStudyRecords(records);
-  }, [isHydrated, records, storageMode]);
 
   async function refreshRecords() {
     if (storageMode !== "supabase") {
@@ -160,21 +137,17 @@ export function StudyRecordsProvider({
   }
 
   async function addRecord(input: NewStudyRecordInput): Promise<MutationResult> {
-    const trimmedSubject = input.subject.trim();
-    const trimmedContent = input.content.trim();
+    if (storageMode !== "supabase" || !sessionUserId) {
+      const nextErrorMessage =
+        errorMessage ||
+        "현재는 저장 연결이 불안정해서 기록을 저장할 수 없어요. 잠시 후 다시 시도해 주세요.";
 
-    if (storageMode === "local" || !sessionUserId) {
-      const record: StudyRecord = {
-        id: createRecordId(),
-        studyDate: input.studyDate,
-        subject: trimmedSubject,
-        durationMinutes: input.durationMinutes,
-        content: trimmedContent,
-        createdAt: new Date().toISOString(),
+      setErrorMessage(nextErrorMessage);
+
+      return {
+        ok: false,
+        errorMessage: nextErrorMessage,
       };
-
-      setRecords((currentRecords) => sortStudyRecords([record, ...currentRecords]));
-      return { ok: true };
     }
 
     try {
@@ -213,13 +186,78 @@ export function StudyRecordsProvider({
     }
   }
 
-  async function deleteRecord(id: string): Promise<MutationResult> {
-    if (storageMode === "local") {
+  async function updateRecord(
+    id: string,
+    input: UpdateStudyRecordInput,
+  ): Promise<MutationResult> {
+    if (storageMode !== "supabase" || !sessionUserId) {
+      const nextErrorMessage =
+        errorMessage ||
+        "현재는 저장 연결이 불안정해서 기록을 수정할 수 없어요. 잠시 후 다시 시도해 주세요.";
+
+      setErrorMessage(nextErrorMessage);
+
+      return {
+        ok: false,
+        errorMessage: nextErrorMessage,
+      };
+    }
+
+    try {
+      setIsSyncing(true);
+
+      const { data, error } = await getSupabaseBrowserClient()
+        .from(STUDY_RECORDS_TABLE)
+        .update(mapStudyRecordInputToUpdate(input))
+        .eq("id", id)
+        .select(STUDY_RECORD_SELECT)
+        .single<StudyRecordRow>();
+
+      if (error || !data) {
+        throw error ?? new Error("Record update returned no data.");
+      }
+
+      const updatedRecord = mapStudyRecordRow(data);
+
       setRecords((currentRecords) =>
-        currentRecords.filter((record) => record.id !== id),
+        sortStudyRecords(
+          currentRecords.map((record) =>
+            record.id === id ? updatedRecord : record,
+          ),
+        ),
       );
+      setErrorMessage("");
 
       return { ok: true };
+    } catch (error) {
+      const nextErrorMessage = createCrudErrorMessage(
+        error,
+        "기록을 수정하지 못했어요. update/select 정책과 컬럼 이름을 다시 확인해보세요.",
+      );
+
+      setErrorMessage(nextErrorMessage);
+
+      return {
+        ok: false,
+        errorMessage: nextErrorMessage,
+      };
+    } finally {
+      setIsSyncing(false);
+    }
+  }
+
+  async function deleteRecord(id: string): Promise<MutationResult> {
+    if (storageMode !== "supabase" || !sessionUserId) {
+      const nextErrorMessage =
+        errorMessage ||
+        "현재는 저장 연결이 불안정해서 기록을 삭제할 수 없어요. 잠시 후 다시 시도해 주세요.";
+
+      setErrorMessage(nextErrorMessage);
+
+      return {
+        ok: false,
+        errorMessage: nextErrorMessage,
+      };
     }
 
     try {
@@ -264,6 +302,7 @@ export function StudyRecordsProvider({
     storageMode,
     errorMessage,
     addRecord,
+    updateRecord,
     deleteRecord,
     refreshRecords,
   };
@@ -321,38 +360,10 @@ async function fetchRemoteRecords(supabase: SupabaseClient) {
   return sortStudyRecords((data ?? []).map(mapStudyRecordRow));
 }
 
-async function migrateLegacyRecords(
-  supabase: SupabaseClient,
-  userId: string,
-  legacyRecords: StudyRecord[],
-) {
-  const rows = legacyRecords.map((record) => ({
-    user_id: userId,
-    study_date: record.studyDate,
-    subject: record.subject,
-    duration_minutes: record.durationMinutes,
-    content: record.content,
-    created_at: record.createdAt,
-  }));
-
-  const { error } = await supabase.from(STUDY_RECORDS_TABLE).insert(rows);
-
-  if (error) {
-    throw error;
-  }
-}
-
-function createInitializationErrorMessage(
-  error: unknown,
-  legacyRecords: StudyRecord[],
-) {
+function createInitializationErrorMessage(error: unknown) {
   const detail = getErrorDetail(error);
 
-  if (legacyRecords.length > 0) {
-    return `Supabase 연결에 실패해서 현재는 이 브라우저 저장 모드로 동작하고 있어요. ${detail}`;
-  }
-
-  return `Supabase 연결에 실패했어요. 테이블 이름, anonymous auth, RLS 정책을 먼저 확인해보세요. ${detail}`;
+  return `Supabase 연결에 실패했어요. 지금은 기록을 불러오거나 저장할 수 없어요. 잠시 후 다시 시도하거나 테이블 이름, 익명 세션 설정, RLS 정책을 확인해보세요.${detail ? ` ${detail}` : ""}`;
 }
 
 function createCrudErrorMessage(error: unknown, fallbackMessage: string) {
@@ -367,12 +378,4 @@ function getErrorDetail(error: unknown) {
   }
 
   return "";
-}
-
-function createRecordId() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-
-  return `record-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
